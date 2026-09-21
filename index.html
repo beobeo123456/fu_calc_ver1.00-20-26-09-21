@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>符計算テンプレ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+  font-family: sans-serif;
+  padding: 16px;
+  max-width: 480px;   /* ← スマホ幅に最適化 */
+  margin: 0 auto;     /* ← 中央寄せ */
+　}
+  h2 { margin-top: 24px; }
+  .hidden { display: none; }
+  .block { margin-bottom: 12px; padding: 10px; background: #f5f5f5; border-radius: 6px; }
+  label { display: block; margin-bottom: 6px; }
+button {
+  width: 100%;            /* スマホは横幅いっぱいが押しやすい */
+  padding: 12px 16px;     /* タップ領域を広げる */
+  font-size: 16px;        /* スマホ標準サイズ */
+  border: none;
+  border-radius: 6px;
+  background: #4CAF50;    /* 好きな色に変えてOK */
+  color: white;
+  margin-top: 8px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+</style>
+</head>
+<body
+
+
+<h1>符計算くん</h1>
+
+<button class="refreshBtn" data-target="reigaiType">全体クリア</button>
+
+<!-- ========================= -->
+<!-- 例外系 -->
+<!-- ========================= -->
+<div class="block" id="reigaiType">
+  <h2>例外系</h2>
+  <label><input type="radio" name="exception" value="20"> ピンフツモ：20符</label>
+  <label><input type="radio" name="exception" value="30"> ピンフロン：30符</label>
+</div>
+
+<!-- ========================= -->
+<!-- 上がり方 -->
+<!-- ========================= -->
+<div class="block" id="agariType">
+  <h2>上がり方</h2>
+  <label><input type="radio" name="agari" value="10" class="agari"> メンゼンロン：10符</label>
+  <label><input type="radio" name="agari" value="2" class="agari"> メンゼンツモ：2符</label>
+  <label><input type="radio" name="agari" value="0" class="agari"> 鳴きロン：0符</label>
+  <label><input type="radio" name="agari" value="2" class="agari"> 鳴きツモ：2符</label>
+　<button class="refreshBtn" data-target="agariType">クリア</button>
+</div>
+
+<!-- ========================= -->
+<!-- 雀頭 -->
+<!-- ========================= -->
+<div class="block" id="atamaBlock">
+  <h2>雀頭</h2>
+  <select id="atamaSelect">
+    <option value="0">その他：0符</option>
+    <option value="4">連風牌：4符</option>
+    <option value="2">三元牌：2符</option>
+  </select>
+  <button class="refreshBtn" data-target="atamaBlock">クリア</button>
+</div>
+
+<!-- ========================= -->
+<!-- 上がりの形（4つ） -->
+<!-- ========================= -->
+<script>
+  const fuOptions = [
+    { label: "なし（順子・対子等）", value: "0", type: "none" },
+    { label: "ポン", type: "pon", small: 2, big: 4 },
+    { label: "暗刻", type: "anko", small: 4, big: 8 },
+    { label: "明槓", type: "minkan", small: 8, big: 16 },
+    { label: "暗槓", type: "ankan", small: 16, big: 32 }
+  ];
+</script>
+
+<div id="mentsuArea"></div>
+
+<script>
+// 4つの面子ブロックを生成
+const mentsuArea = document.getElementById("mentsuArea");
+
+for (let i = 1; i <= 4; i++) {
+  const block = document.createElement("div");
+  block.className = "block";
+  block.id = `mentsuBlock${i}`;
+
+  block.innerHTML = `
+    <h2>上がりの形${i}</h2>
+    <select class="mentsuSelect" data-id="${i}">
+      ${fuOptions.map(opt => `<option value="${opt.type}">${opt.label}</option>`).join("")}
+    </select>
+
+    <div id="mentsuRadio${i}" class="hidden">
+      <label>
+        <input type="radio" name="mentsu${i}" value="small">
+        2〜8牌：${fuOptions.find(o => o.type === "pon").small}符
+      </label>
+      <label>
+        <input type="radio" name="mentsu${i}" value="big">
+        一九字牌：${fuOptions.find(o => o.type === "pon").big}符
+      </label>
+    </div>
+  `;
+  mentsuArea.appendChild(block);
+}
+
+// ▼選択でラジオ表示
+document.querySelectorAll(".mentsuSelect").forEach(sel => {
+  sel.addEventListener("change", () => {
+    const id = sel.dataset.id;
+    const type = sel.value;
+    const opt = fuOptions.find(o => o.type === type);
+
+    const radio = document.getElementById(`mentsuRadio${id}`);
+
+    // small/big の符を種類に応じて書き換える
+    radio.querySelector("label:nth-child(1)").innerHTML =
+      `<input type="radio" name="mentsu${id}" value="small"> 2〜8牌：${opt.small}符`;
+
+    radio.querySelector("label:nth-child(2)").innerHTML =
+      `<input type="radio" name="mentsu${id}" value="big"> 一九字牌：${opt.big}符`;
+
+    radio.classList.remove("hidden");
+  });
+});
+</script>
+
+<!-- ========================= -->
+<!-- 待ちの形 -->
+<!-- ========================= -->
+<div class="block" id="matiBlock">
+  <h2>待ちの形</h2>
+  <label><input type="radio" name="mati" value="2"> カンチャン・ペンチャン・単騎：2符</label>
+  <label><input type="radio" name="mati" value="0"> その他：0符</label>
+　<button class="refreshBtn" data-target="matiBlock">クリア</button>
+</div>
+
+
+<!-- ========================= -->
+<!-- 計算ボタン -->
+<!-- ========================= -->
+<button id="calcBtn">計算する</button>
+
+<div class="block">
+  <h2>結果</h2>
+  <div id="result">ここに結果が表示されます</div>
+</div>
+
+<script>
+
+// 例外系が選ばれたら他を無効化
+document.querySelectorAll("input[name='exception']").forEach(r => {
+  r.addEventListener("change", () => {
+    const disabled = r.checked;
+    document.getElementById("agariType").style.opacity = disabled ? 0.4 : 1;
+    document.getElementById("atamaBlock").style.opacity = disabled ? 0.4 : 1;
+    document.getElementById("mentsuArea").style.opacity = disabled ? 0.4 : 1;
+    document.getElementById("matiBlock").style.opacity = disabled ? 0.4 : 1;
+    document.querySelectorAll("#agariType input, #atamaBlock select, #mentsuArea select, #mentsuArea input, #matiBlock input")
+      .forEach(el => el.disabled = disabled);
+  });
+});
+
+
+//リフレッシュ処理
+document.querySelectorAll(".refreshBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetId = btn.dataset.target;
+    const block = document.getElementById(targetId);
+
+    // ★例外系クリア時は他ブロックを有効化＋初期化
+    if (targetId === "reigaiType") {
+
+      // 1. 他ブロックの disabled を解除
+      document.querySelectorAll("#agariType input, #atamaBlock select, #mentsuArea select, #mentsuArea input, #matiBlock input")
+        .forEach(el => el.disabled = false);
+
+      // 2. opacity を戻す
+      document.getElementById("agariType").style.opacity = 1;
+      document.getElementById("atamaBlock").style.opacity = 1;
+      document.getElementById("mentsuArea").style.opacity = 1;
+      document.getElementById("matiBlock").style.opacity = 1;
+
+      // 3. 他ブロックを初期化
+      refreshBlock("agariType");
+      refreshBlock("atamaBlock");
+      refreshBlock("matiBlock");
+
+      // 面子は4ブロック全部初期化
+      for (let i = 1; i <= 4; i++) {
+        refreshBlock(`mentsuBlock${i}`);
+      }
+    }
+
+    // ★例外系自身の初期化
+    block.querySelectorAll("input").forEach(input => {
+      if (input.type === "checkbox" || input.type === "radio") {
+        input.checked = false;
+      } else {
+        input.value = "";
+      }
+    });
+
+    block.querySelectorAll("select").forEach(sel => {
+      sel.selectedIndex = 0;
+    });
+
+    // 面子ラジオを隠す
+    const radios = block.querySelectorAll("[id^='mentsuRadio']");
+    radios.forEach(r => r.classList.add("hidden"));
+  });
+});
+
+
+
+// 計算（ロジックはまだダミー）
+document.getElementById("calcBtn").addEventListener("click", () => {
+  let total = 0;
+
+  // 例外系
+  const ex = document.querySelector("input[name='exception']:checked");
+  if (ex) {
+    total = Number(ex.value);
+    document.getElementById("result").textContent = `${total}符（例外系）`;
+    return;
+  }
+
+  // 基礎点
+    total = 20
+
+  // 上がり方
+  document.querySelectorAll(".agari:checked").forEach(c => {
+    total += Number(c.value);
+  });
+
+  // 雀頭
+  total += Number(document.getElementById("atamaSelect").value);
+
+  // 面子4つ
+  for (let i = 1; i <= 4; i++) {
+    const sel = document.querySelector(`.mentsuSelect[data-id='${i}']`).value;
+    const radio = document.querySelector(`input[name='mentsu${i}']:checked`);
+
+    const opt = fuOptions.find(o => o.type === sel);
+    if (!opt || sel === "none") continue;
+
+    if (radio) {
+      total += radio.value === "small" ? opt.small : opt.big;
+    }
+  }
+
+  // 待ち
+  const mati = document.querySelector("input[name='mati']:checked");
+  if (mati) total += Number(mati.value);
+　
+　//切り上げ処理
+  total = Math.ceil(total / 10) * 10
+
+  document.getElementById("result").textContent = `${total}符`;
+
+
+});
+
+//リフレッシュ関数
+function refreshBlock(targetId) {
+  const block = document.getElementById(targetId);
+  if (!block) return; // ←これ超重要
+
+  block.querySelectorAll("input").forEach(input => {
+    if (input.type === "checkbox" || input.type === "radio") {
+      input.checked = false;
+    } else {
+      input.value = "";
+    }
+  });
+
+  block.querySelectorAll("select").forEach(sel => {
+    sel.selectedIndex = 0;
+  });
+
+  const radios = block.querySelectorAll("[id^='mentsuRadio']");
+  radios.forEach(r => r.classList.add("hidden"));
+}
+
+
+</script>
+
+</body>
+</html>
