@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>符計算テンプレ</title>
+<title>符計算くん</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body {
@@ -66,9 +66,9 @@ button:hover {
 <div class="block" id="atamaBlock">
   <h2>雀頭</h2>
   <select id="atamaSelect">
-    <option value="0">その他：0符</option>
+    <option value="0">中張牌(2～8牌)、オタ風：0符</option>
+    <option value="2">役になる風牌、三元牌：2符</option>
     <option value="4">連風牌：4符</option>
-    <option value="2">三元牌：2符</option>
   </select>
   <button class="refreshBtn" data-target="atamaBlock">クリア</button>
 </div>
@@ -106,11 +106,11 @@ for (let i = 1; i <= 4; i++) {
     <div id="mentsuRadio${i}" class="hidden">
       <label>
         <input type="radio" name="mentsu${i}" value="small">
-        2〜8牌：${fuOptions.find(o => o.type === "pon").small}符
+        中張牌(2〜8牌)：${fuOptions.find(o => o.type === "pon").small}符
       </label>
       <label>
         <input type="radio" name="mentsu${i}" value="big">
-        一九字牌：${fuOptions.find(o => o.type === "pon").big}符
+        幺九牌(1,9,字牌)：${fuOptions.find(o => o.type === "pon").big}符
       </label>
     </div>
   `;
@@ -128,10 +128,10 @@ document.querySelectorAll(".mentsuSelect").forEach(sel => {
 
     // small/big の符を種類に応じて書き換える
     radio.querySelector("label:nth-child(1)").innerHTML =
-      `<input type="radio" name="mentsu${id}" value="small"> 2〜8牌：${opt.small}符`;
+      `<input type="radio" name="mentsu${id}" value="small"> 中張牌(2〜8牌)：${opt.small}符`;
 
     radio.querySelector("label:nth-child(2)").innerHTML =
-      `<input type="radio" name="mentsu${id}" value="big"> 一九字牌：${opt.big}符`;
+      `<input type="radio" name="mentsu${id}" value="big"> 幺九牌(1,9,字牌)：${opt.big}符`;
 
     radio.classList.remove("hidden");
   });
